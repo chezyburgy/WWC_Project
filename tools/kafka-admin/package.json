@@ -1,0 +1,17 @@
+{
+  "name": "@ecom/kafka-admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node create-topics.js",
+    "seed:orders": "node seed-orders.js",
+    "seed:ops": "node seed-ops.js",
+    "peek": "node peek.js",
+    "build": "echo 'no build'"
+  },
+  "dependencies": {
+    "kafkajs": "^2.2.4",
+    "node-fetch": "^3.3.2"
+  }
+}

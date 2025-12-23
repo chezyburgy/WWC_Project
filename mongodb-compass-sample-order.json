@@ -1,0 +1,32 @@
+{
+  "_id": "NEW-ORDER-ID-123",
+  "createdAt": {
+    "$date": "2025-11-06T08:00:00.000Z"
+  },
+  "currentStatus": "CREATED",
+  "timeline": [
+    {
+      "type": "order.OrderCreated.v1",
+      "at": {
+        "$date": "2025-11-06T08:00:00.000Z"
+      },
+      "details": {
+        "orderId": "NEW-ORDER-ID-123",
+        "items": [
+          {
+            "sku": "SKU-100",
+            "qty": 5
+          },
+          {
+            "sku": "SKU-200",
+            "qty": 3
+          }
+        ],
+        "total": 150
+      }
+    }
+  ],
+  "updatedAt": {
+    "$date": "2025-11-06T08:00:00.000Z"
+  }
+}

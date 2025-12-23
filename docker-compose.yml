@@ -1,0 +1,163 @@
+services:
+  kafka:
+    image: redpandadata/redpanda:v24.1.6
+    profiles: ["infra"]
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --node-id
+      - "0"
+      - --check=false
+      - --kafka-addr
+      - PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      - --advertise-kafka-addr
+      - PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    profiles: ["infra"]
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    ports:
+      - "8080:8080"
+
+  mongo:
+    image: mongo:6
+    profiles: ["infra"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    command: ["mongod", "--bind_ip_all"]
+
+  order-service:
+    build:
+      context: .
+      dockerfile: services/order-service/Dockerfile
+    profiles: ["app"]
+    environment:
+      - PORT=4001
+      - KAFKA_BROKERS=kafka:9092
+      - MONGO_URL=mongodb://mongo:27017
+      - JWT_SECRET=devsecret
+      - SERVICE_NAME=order-service
+    depends_on:
+      - kafka
+      - mongo
+    ports:
+      - "4001:4001"
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: services/inventory-service/Dockerfile
+    profiles: ["app"]
+    environment:
+      - PORT=4002
+      - KAFKA_BROKERS=kafka:9092
+      - MONGO_URL=mongodb://mongo:27017
+      - JWT_SECRET=devsecret
+      - SERVICE_NAME=inventory-service
+    depends_on:
+      - kafka
+      - mongo
+    ports:
+      - "4002:4002"
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: services/payment-service/Dockerfile
+    profiles: ["app"]
+    environment:
+      - PORT=4003
+      - KAFKA_BROKERS=kafka:9092
+      - MONGO_URL=mongodb://mongo:27017
+      - JWT_SECRET=devsecret
+      - SERVICE_NAME=payment-service
+    depends_on:
+      - kafka
+      - mongo
+    ports:
+      - "4003:4003"
+
+  shipping-service:
+    build:
+      context: .
+      dockerfile: services/shipping-service/Dockerfile
+    profiles: ["app"]
+    environment:
+      - PORT=4004
+      - KAFKA_BROKERS=kafka:9092
+      - MONGO_URL=mongodb://mongo:27017
+      - JWT_SECRET=devsecret
+      - SERVICE_NAME=shipping-service
+    depends_on:
+      - kafka
+      - mongo
+    ports:
+      - "4004:4004"
+
+  read-model-service:
+    build:
+      context: .
+      dockerfile: services/read-model-service/Dockerfile
+    profiles: ["app"]
+    environment:
+      - PORT=4005
+      - KAFKA_BROKERS=kafka:9092
+      - MONGO_URL=mongodb://mongo:27017
+      - JWT_SECRET=devsecret
+      - SERVICE_NAME=read-model-service
+      - CORS_ORIGIN=*
+    depends_on:
+      - kafka
+      - mongo
+    ports:
+      - "4005:4005"
+
+  dashboard:
+    build:
+      context: ./apps/dashboard
+      dockerfile: Dockerfile
+    profiles: ["app"]
+    environment:
+      - VITE_API_BASE=http://localhost:4005
+    depends_on:
+      - read-model-service
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./apps/dashboard/src:/app/src
+      - ./apps/dashboard/public:/app/public
+      - ./apps/dashboard/index.html:/app/index.html
+      - ./apps/dashboard/vite.config.ts:/app/vite.config.ts
+      - ./apps/dashboard/tailwind.config.js:/app/tailwind.config.js
+      - ./apps/dashboard/postcss.config.js:/app/postcss.config.js
+
+  mongo-express:
+    image: mongo-express:latest
+    profiles: ["infra"]
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongo:27017/
+      - ME_CONFIG_BASICAUTH=false
+    depends_on:
+      - mongo
+    ports:
+      - "8081:8081"
+
+volumes:
+  mongo-data: {}
